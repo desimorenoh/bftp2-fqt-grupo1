@@ -1,6 +1,9 @@
-package com.example.bftp2springprofilesexample;
+package com.example.bftp2springprofilesexample.integrationTest;
 
+import com.example.bftp2springprofilesexample.controllers.LoginRequest;
+import com.example.bftp2springprofilesexample.models.Role;
 import com.example.bftp2springprofilesexample.models.Stock;
+import com.example.bftp2springprofilesexample.repositories.RoleRepository;
 import com.example.bftp2springprofilesexample.repositories.StockRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,9 +13,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.List;
 
+import static com.example.bftp2springprofilesexample.models.Role.RoleName.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -33,7 +39,11 @@ class ApplicationTests {
     private StockRepository stockRepository;
 
     @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
     private MockMvc api;
+
 
 
     @BeforeEach
@@ -119,6 +129,7 @@ class ApplicationTests {
     @WithMockUser
     void returnsTheExistingStocks() throws Exception {
 
+
         addSampleStocks();
 
         api.perform(get("/api/stocks"))
@@ -140,8 +151,67 @@ class ApplicationTests {
     }
 
     private void addSampleStocks() {
+        List<Stock> stock = List.of(
+                new Stock(1L, "Prendas01", "Abrigos", "Prendas", 1, 0, 0),
+                new Stock(2L, "Complementos01", "Zapatos", "Complementos", 1, 0, 0)
+        );
+
+        stockRepository.saveAll(stock);
     }
 
+    @Test
+    @WithMockUser
+    void returnTheExistingRoles() throws Exception {
+
+            addSampleRoles();
+
+            api.perform(get("/auth/roles"))
+                    .andExpect(jsonPath("$[*]", hasSize(3)))
+                    .andExpect(jsonPath("$[0].id", equalTo(1)))
+                    .andExpect(jsonPath("$[0].name", equalTo("ROLE_USER")))
+                    .andExpect(jsonPath("$[1].id", equalTo(2)))
+                    .andExpect(jsonPath("$[1].name", equalTo("ROLE_ADMIN")))
+                    .andExpect(jsonPath("$[2].id", equalTo(3)))
+                    .andExpect(jsonPath("$[2].name", equalTo("ROLE_MODERATOR")))
+                    .andDo(print());
+        }
+
+        private void addSampleRoles() {
+            List<Role> roles = List.of(
+                    new Role(1, ROLE_USER),
+                    new Role(2, ROLE_ADMIN),
+                    new Role(3, ROLE_MODERATOR)
+            );
+
+            roleRepository.saveAll(roles);
+
+        }
+
+
+    @Test
+    public void existentUserCanGetTokenAndAuthentication() throws Exception {
+        String username = "admin";
+        LoginRequest loginRequest = new LoginRequest();
+        String password = loginRequest.getPassword();
+
+        String body = "{\"username\":\"" + username + "\", \"password\":\""
+                + password + "\"}";
+
+        MvcResult result = api.perform(MockMvcRequestBuilders.post("/auth/signin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body)
+                        .characterEncoding("utf-8"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        response = response.replace("{\"accessToken\": \"", "");
+        String token = response.replace("\"}", "");
+
+        api.perform(MockMvcRequestBuilders.get("/auth/signin")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
 
 }
 
