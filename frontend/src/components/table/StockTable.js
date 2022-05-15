@@ -33,9 +33,8 @@ const StockTable = ({stocks, deleteStock}) => {
                                 <td className="category-td">{stock.codigo}</td>
                                 <td className="category-td">{stock.descripcion}</td>
                                 <td className="category-td">{stock.category}</td>
-                                <td className="category-td" style={stock.cantidad === 0 ? {
+                                <td className="category-td quantity" style={stock.cantidad === 0 ? {
                                     fontSize: 25,
-                                    color: "red"
                                 } : {}}>{stock.cantidad}</td>
 
                                 <td className="category-td-link">
