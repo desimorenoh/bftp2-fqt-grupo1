@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import "./New.css"
 import {FaRegPlusSquare} from 'react-icons/fa';
 import {FaRegMinusSquare} from 'react-icons/fa';
-import {useLocation, useNavigate} from "react-router-dom";
+import {useLocation, useNavigate, redirect} from "react-router-dom";
 
 
 export const New = (props) => {
@@ -30,7 +30,8 @@ export const New = (props) => {
     const enviarDatos = (event) => {
         event.preventDefault()
         props.addStock(datos)
-            .then(() => navigate("/stocks"))
+            .then(() => navigate("/"))
+
     }
 
     return (
